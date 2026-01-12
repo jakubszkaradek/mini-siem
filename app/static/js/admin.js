@@ -1,8 +1,5 @@
 import { createEl, clearContainer } from './dom.js';
-// Zauważ: Usuwamy importy fetchIPs itp., bo ich nie ma w api.js (student musi je dodać po napisaniu)
-import { fetchHosts, createHost, updateHost, removeHost } from './api.js'; 
-// TODO: Odkomentuj poniższy import, gdy uzupełnisz api.js
-// import { fetchIPs, createIP, updateIP, removeIP } from './api.js';
+import { fetchHosts, createHost, updateHost, removeHost, fetchIPs, createIP, updateIP, removeIP } from './api.js';
 
 // --- SEKCJA HOSTÓW ---
 const hostsContainer = document.getElementById('hostsListAdmin');
@@ -21,7 +18,7 @@ export async function initAdmin() {
     // Inicjalizacja Bootstrap Modals
     const hostModalEl = document.getElementById('editHostModal');
     if (hostModalEl) hostModal = new bootstrap.Modal(hostModalEl);
-    
+
     const ipModalEl = document.getElementById('editIPModal');
     if (ipModalEl) ipModal = new bootstrap.Modal(ipModalEl);
 
@@ -31,18 +28,14 @@ export async function initAdmin() {
         document.getElementById('saveHostBtn').addEventListener('click', handleSaveHost);
     }
 
-    /* 
-    // TODO: ZADANIE 3 (Frontend) - THREAT INTEL
-    // Odkomentuj obsługę zdarzeń dla Rejestru IP, gdy odblokujesz HTML w config.html
-    
+    // Event Listeners - IP Registry
     if (ipForm) ipForm.addEventListener('submit', handleAddIP);
     if (refreshIPsBtn) refreshIPsBtn.addEventListener('click', refreshIPs);
     if (document.getElementById('saveIPBtn')) {
         document.getElementById('saveIPBtn').addEventListener('click', handleSaveIP);
     }
-    
+
     if (ipContainer) await refreshIPs();
-    */
 
     // Start Hosty
     if (hostsContainer) await refreshHosts();
@@ -55,12 +48,12 @@ async function refreshHosts() {
     try {
         const hosts = await fetchHosts();
         hosts.forEach(renderHostRow);
-    } catch(e) { console.error(e); }
+    } catch (e) { console.error(e); }
 }
 
 function renderHostRow(host) {
     const item = createEl('div', ['list-group-item', 'd-flex', 'justify-content-between', 'align-items-center'], '', hostsContainer);
-    
+
     const info = createEl('div', [], '', item);
     const icon = host.os_type === 'LINUX' ? '🐧' : '🪟';
     createEl('span', ['me-2'], icon, info);
@@ -68,16 +61,14 @@ function renderHostRow(host) {
     createEl('small', ['text-muted'], host.ip_address, info);
 
     const btnGroup = createEl('div', ['btn-group', 'btn-group-sm'], '', item);
-    
+
     const editBtn = createEl('button', ['btn', 'btn-outline-secondary'], '✏️', btnGroup);
     editBtn.addEventListener('click', () => openHostModal(host));
 
     const delBtn = createEl('button', ['btn', 'btn-outline-danger'], '🗑️', btnGroup);
     delBtn.addEventListener('click', async () => {
-        if(confirm(`Usunąć hosta ${host.hostname}?`)) {
-            await removeHost(host.id);
-            await refreshHosts();
-        }
+        await removeHost(host.id);
+        await refreshHosts();
     });
 }
 
@@ -92,7 +83,7 @@ async function handleAddHost(e) {
         await createHost(data);
         e.target.reset();
         await refreshHosts();
-    } catch(err) { alert(err.message); }
+    } catch (err) { alert(err.message); }
 }
 
 function openHostModal(host) {
@@ -114,23 +105,20 @@ async function handleSaveHost() {
         await updateHost(id, data);
         hostModal.hide();
         await refreshHosts();
-    } catch(err) { alert(err.message); }
+    } catch (err) { alert(err.message); }
 }
 
 
 // ======================= LOGIKA IP REGISTRY (DO ODBLOKOWANIA) =======================
-
-/*
-// TODO: ZADANIE 3 (Frontend) - Odkomentuj całą poniższą sekcję
-// Uwaga: Funkcje fetchIPs, createIP itd. muszą zostać zaimplementowane w api.js!
+// ======================= LOGIKA IP REGISTRY =======================
 
 async function refreshIPs() {
     clearContainer(ipContainer);
     try {
-        const ips = await fetchIPs(); // <-- To musi działać w api.js
-        if(ips.length === 0) createEl('div', ['p-2', 'text-muted', 'small'], 'Pusto.', ipContainer);
+        const ips = await fetchIPs();
+        if (ips.length === 0) createEl('div', ['p-2', 'text-muted', 'small'], 'Brak adresów IP w rejestrze.', ipContainer);
         ips.forEach(renderIPRow);
-    } catch(e) { console.error("Błąd IP:", e); }
+    } catch (e) { console.error("Błąd IP:", e); }
 }
 
 function renderIPRow(ip) {
@@ -138,10 +126,10 @@ function renderIPRow(ip) {
 
     const info = createEl('div', [], '', item);
     let color = 'bg-secondary';
-    if(ip.status === 'TRUSTED') color = 'bg-success';
-    if(ip.status === 'BANNED') color = 'bg-danger';
+    if (ip.status === 'TRUSTED') color = 'bg-success';
+    if (ip.status === 'BANNED') color = 'bg-danger';
     createEl('span', ['badge', color, 'me-2'], ip.status[0], info);
-    
+
     createEl('span', ['fw-bold', 'font-monospace', 'me-2'], ip.ip_address, info);
 
     let timeStr = '-';
@@ -152,18 +140,16 @@ function renderIPRow(ip) {
     createEl('small', ['text-muted'], timeStr, info);
 
     const btnGroup = createEl('div', ['btn-group', 'btn-group-sm'], '', item);
-    
+
     const editBtn = createEl('button', ['btn', 'btn-outline-secondary'], '✏️', btnGroup);
     editBtn.addEventListener('click', () => openIPModal(ip));
 
     const delBtn = createEl('button', ['btn', 'btn-outline-danger'], '🗑️', btnGroup);
     delBtn.addEventListener('click', async () => {
-        if(confirm(`Usunąć adres IP ${ip.ip_address} z rejestru?`)) {
-            try {
-                await removeIP(ip.id);
-                await refreshIPs();
-            } catch (err) { alert("Błąd usuwania: " + err.message); }
-        }
+        try {
+            await removeIP(ip.id);
+            await refreshIPs();
+        } catch (err) { alert("Błąd usuwania: " + err.message); }
     });
 }
 
@@ -177,7 +163,7 @@ async function handleAddIP(e) {
         await createIP(data);
         e.target.reset();
         await refreshIPs();
-    } catch(err) { alert(err.message); }
+    } catch (err) { alert(err.message); }
 }
 
 function openIPModal(ip) {
@@ -197,6 +183,5 @@ async function handleSaveIP() {
         await updateIP(id, data);
         ipModal.hide();
         await refreshIPs();
-    } catch(err) { alert(err.message); }
+    } catch (err) { alert(err.message); }
 }
-*/

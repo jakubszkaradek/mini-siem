@@ -11,18 +11,12 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256))
 
     def set_password(self, password):
-        # TODO: ZADANIE 1 - BEZPIECZEŃSTWO
-        # Zaimplementuj hashowanie hasła przy użyciu generate_password_hash.
-        # Wynik zapisz do pola self.password_hash.
-        pass
+        """Hashuje hasło i zapisuje do password_hash."""
+        self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
-        # TODO: ZADANIE 1 - BEZPIECZEŃSTWO
-        # Zaimplementuj weryfikację hasła przy użyciu check_password_hash.
-        # Metoda ma zwracać True jeśli hasło jest poprawne, False w przeciwnym razie.
-        
-        # TYMCZASOWO: Zwracamy True, żeby nie blokować testów (do zmiany!)
-        return True 
+        """Weryfikuje hasło przeciwko zapisanemu hashowi."""
+        return check_password_hash(self.password_hash, password) 
 
 # === MODELE SYSTEMOWE (GOTOWE) ===
 class Host(db.Model):

@@ -44,33 +44,48 @@ class LogAnalyzer:
                 continue
 
             # =======================================================
-            # TODO: ZADANIE 3 - LOGIKA SIEM (THREAT INTELLIGENCE)
+            # LOGIKA SIEM (THREAT INTELLIGENCE)
             # =======================================================
             
-            # Twoim zadaniem jest ocena powagi incydentu w oparciu o bazę IPRegistry.
+            # 1. Sprawdź IP w rejestrze
+            ip_entry = IPRegistry.query.filter_by(ip_address=ip).first()
             
-            # 1. Sprawdź, czy adres IP (zmienna 'ip') znajduje się w tabeli IPRegistry.
-            # 2. Jeśli NIE MA go w bazie -> Dodaj go ze statusem 'UNKNOWN' i obecnym czasem (last_seen).
-            # 3. Jeśli JEST w bazie -> Zaktualizuj mu last_seen.
+            if not ip_entry:
+                # 2. Nowe IP - dodaj ze statusem UNKNOWN
+                ip_entry = IPRegistry(
+                    ip_address=ip,
+                    status='UNKNOWN',
+                    last_seen=datetime.now(timezone.utc)
+                )
+                db.session.add(ip_entry)
+            else:
+                # 3. Istniejące IP - aktualizuj last_seen
+                ip_entry.last_seen = datetime.now(timezone.utc)
             
-            # 4. Ustal poziom alertu (severity) i treść wiadomości (message):
-            #    - Domyślny poziom: 'WARNING'.
-            #    - Jeśli IP ma status 'BANNED' -> Zmień poziom na 'CRITICAL' i dopisz to w treści.
-            #    - Jeśli IP ma status 'TRUSTED' -> Możesz pominąć alert (continue) lub ustawić 'INFO'.
+            # 4. Ustal severity i message na podstawie statusu IP
+            if ip_entry.status == 'BANNED':
+                severity = 'CRITICAL'
+                message = f"🚨 BANNED IP {ip} próbował się zalogować jako '{user}'"
+            elif ip_entry.status == 'TRUSTED':
+                # Pomijamy alerty dla zaufanych IP
+                continue
+            else:
+                severity = 'WARNING'
+                message = f"⚠️ Nieudana próba logowania z {ip} (user: {user})"
             
-            # 5. Stwórz obiekt Alert:
-            #    new_alert = Alert(
-            #        host_id=host_id,
-            #        alert_type=row['alert_type'],
-            #        source_ip=ip,
-            #        severity=severity,  <-- To musi być dynamiczne
-            #        message=message,    <-- To też
-            #        timestamp=datetime.now(timezone.utc)
-            #    )
+            # 5. Stwórz Alert
+            new_alert = Alert(
+                host_id=host_id,
+                alert_type=row['alert_type'],
+                source_ip=ip,
+                severity=severity,
+                message=message,
+                timestamp=datetime.now(timezone.utc)
+            )
             
-            # 6. Dodaj do sesji (db.session.add) i zwiększ licznik alerts_created.
-            
-            pass # Usuń to po implementacji
+            # 6. Dodaj do sesji i zwiększ licznik
+            db.session.add(new_alert)
+            alerts_created += 1
 
         # Zatwierdzenie zmian w bazie
         db.session.commit()
