@@ -1,5 +1,5 @@
 import pandas as pd
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from app.extensions import db
 from app.models import Alert, IPRegistry, Host
 from app.services.data_manager import DataManager
@@ -39,9 +39,30 @@ class LogAnalyzer:
             ip = row['source_ip']
             user = row.get('user', 'unknown')
             
-            # Ignorujemy lokalne
-            if ip in ['LOCAL', 'LOCAL_CONSOLE', '127.0.0.1', '::1']:
-                continue
+            # # Ignorujemy lokalne
+            # if ip in ['LOCAL', 'LOCAL_CONSOLE', '127.0.0.1', '::1']:
+            #     continue
+            
+            # Pobierz oryginalny timestamp z logu
+            log_timestamp = row.get('timestamp', datetime.now(timezone.utc))
+            if isinstance(log_timestamp, str):
+                try:
+                    log_timestamp = datetime.strptime(log_timestamp, '%Y-%m-%d %H:%M:%S')
+                except:
+                    log_timestamp = datetime.now(timezone.utc)
+            
+            # Sprawdź czy alert już istnieje (duplikat)
+            existing_alert = Alert.query.filter_by(
+                host_id=host_id,
+                source_ip=ip,
+                alert_type=row['alert_type']
+            ).filter(
+                Alert.timestamp >= log_timestamp - timedelta(seconds=5),
+                Alert.timestamp <= log_timestamp + timedelta(seconds=5)
+            ).first()
+            
+            if existing_alert:
+                continue  # Pomijamy duplikaty
 
             # =======================================================
             # LOGIKA SIEM (THREAT INTELLIGENCE)
@@ -80,7 +101,7 @@ class LogAnalyzer:
                 source_ip=ip,
                 severity=severity,
                 message=message,
-                timestamp=datetime.now(timezone.utc)
+                timestamp=log_timestamp  # Używamy oryginalnego timestampa z logu
             )
             
             # 6. Dodaj do sesji i zwiększ licznik

@@ -147,8 +147,9 @@ async function refreshAlertsTable() {
             if (alert.severity === 'CRITICAL') row.classList.add('table-danger');
             else if (alert.severity === 'WARNING') row.classList.add('table-warning');
 
-            const utcDate = new Date(alert.timestamp.replace(" ", "T") + "Z");
-            createEl('td', [], utcDate.toLocaleString(), row);
+            // Timestamp jest juz czasem lokalnym - nie dodajemy 'Z' (UTC)
+            const localDate = new Date(alert.timestamp.replace(" ", "T"));
+            createEl('td', [], localDate.toLocaleString(), row);
             createEl('td', ['fw-bold'], alert.host_name, row);
             createEl('td', [], alert.alert_type, row);
             createEl('td', ['font-monospace'], alert.source_ip || '-', row);
