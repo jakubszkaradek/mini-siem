@@ -117,6 +117,7 @@ def get_windows_info(host_id):
 # ===================================================================
 
 @api_bp.route("/hosts/<int:host_id>/logs", methods=["POST"])
+# [ZMODYFIKOWANO] Ochrona API - wymaga zalogowania
 @login_required
 def fetch_logs(host_id):
     """Pobiera logi z hosta, zapisuje do Parquet i analizuje zagrożenia."""
@@ -132,7 +133,7 @@ def fetch_logs(host_id):
     logs = []
     
     try:
-        # KROK 1: Rozgałęzienie według OS
+        # [ZMODYFIKOWANO] Rozgałęzienie według systemu operacyjnego
         if host.os_type == "LINUX":
             # Konfiguracja SSH
             ssh_config = {
@@ -156,13 +157,13 @@ def fetch_logs(host_id):
         if not logs:
             return jsonify({"message": "Brak nowych logów do pobrania", "alerts": 0}), 200
         
-        # KROK 4: FORENSICS - Zapis do Parquet PRZED analizą
+        # [ZMODYFIKOWANO] FORENSICS - zapis do Parquet PRZED analizą (wymagane!)
         filename, record_count = DataManager.save_logs_to_parquet(logs, host.id)
         
         if not filename:
             return jsonify({"error": "Błąd zapisu logów do Parquet"}), 500
         
-        # KROK 5: Aktualizacja last_fetch
+        # [ZMODYFIKOWANO] Aktualizacja last_fetch - przyrostowe pobieranie
         log_source.last_fetch = datetime.now(timezone.utc)
         
         # KROK 6: Wpis do LogArchive (historia pobrań)
@@ -173,7 +174,7 @@ def fetch_logs(host_id):
         )
         db.session.add(archive)
         
-        # KROK 7: Analiza zagrożeń (Threat Intelligence)
+        # [ZMODYFIKOWANO] Wywołanie LogAnalyzer - Threat Intelligence
         alerts_count = LogAnalyzer.analyze_parquet(filename, host.id)
         
         # Jeden commit na końcu transakcji

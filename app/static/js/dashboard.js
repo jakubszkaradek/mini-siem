@@ -133,6 +133,7 @@ async function refreshAlertsTable() {
     clearContainer(alertsBody);
 
     try {
+        // [ODKOMENTOWANO] Pobieranie alertów z API
         const alerts = await fetchAlerts();
 
         if (alerts.length === 0) {
@@ -147,7 +148,8 @@ async function refreshAlertsTable() {
             if (alert.severity === 'CRITICAL') row.classList.add('table-danger');
             else if (alert.severity === 'WARNING') row.classList.add('table-warning');
 
-            // Timestamp jest juz czasem lokalnym - nie dodajemy 'Z' (UTC)
+            // [NAPRAWIONO BUG] Timestamp jest czasem lokalnym - NIE dodajemy 'Z' (UTC)
+            // Dodanie 'Z' powodowało +1h w Polsce
             const localDate = new Date(alert.timestamp.replace(" ", "T"));
             createEl('td', [], localDate.toLocaleString(), row);
             createEl('td', ['fw-bold'], alert.host_name, row);

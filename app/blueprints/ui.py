@@ -10,6 +10,7 @@ def index():
     return render_template('index.html')
 
 @ui_bp.route('/config')
+# [ZMODYFIKOWANO] Wymuszenie logowania - bez tego panel admin jest publiczny!
 @login_required
 def config():
     # To jest nowa strona administracyjna

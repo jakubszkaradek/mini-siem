@@ -54,7 +54,7 @@ export async function triggerLogFetch(hostId) {
     return await res.json();
 }
 
-// === IP REGISTRY API ===
+// [ODKOMENTOWANO] === IP REGISTRY API - funkcje do zarządzania reputacją IP ===
 export async function fetchIPs() {
     const res = await fetch('/api/ips');
     if (!res.ok) throw new Error('Błąd pobierania IP');
@@ -86,7 +86,7 @@ export async function removeIP(id) {
     if (!res.ok) throw new Error('Błąd usuwania IP');
 }
 
-// === ALERTS API ===
+// [ODKOMENTOWANO] === ALERTS API - pobieranie wykrytych zagrożeń ===
 export async function fetchAlerts() {
     const res = await fetch('/api/alerts');
     if (!res.ok) throw new Error('Błąd pobierania alertów');

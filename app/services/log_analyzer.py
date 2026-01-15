@@ -1,4 +1,5 @@
 import pandas as pd
+# [NAPRAWIONO BUG] Dodano timedelta do detekcji duplikatów
 from datetime import datetime, timezone, timedelta
 from app.extensions import db
 from app.models import Alert, IPRegistry, Host
@@ -25,7 +26,7 @@ class LogAnalyzer:
         if 'alert_type' not in df.columns or 'source_ip' not in df.columns:
             return 0
 
-        # 2. Filtrowanie: Interesują nas tylko ataki
+        # [ZMODYFIKOWANO] Filtrowanie tylko typów ataków
         attack_pattern = ['FAILED_LOGIN', 'INVALID_USER', 'WIN_FAILED_LOGIN']
         threats = df[df['alert_type'].isin(attack_pattern)]
         
@@ -43,7 +44,7 @@ class LogAnalyzer:
             # if ip in ['LOCAL', 'LOCAL_CONSOLE', '127.0.0.1', '::1']:
             #     continue
             
-            # Pobierz oryginalny timestamp z logu
+            # [NAPRAWIONO BUG] Pobranie oryginalnego timestampa z logu (nie datetime.now)
             log_timestamp = row.get('timestamp', datetime.now(timezone.utc))
             if isinstance(log_timestamp, str):
                 try:
@@ -51,7 +52,7 @@ class LogAnalyzer:
                 except:
                     log_timestamp = datetime.now(timezone.utc)
             
-            # Sprawdź czy alert już istnieje (duplikat)
+            # [NAPRAWIONO BUG] Detekcja duplikatów - unikamy powtórzonych alertów
             existing_alert = Alert.query.filter_by(
                 host_id=host_id,
                 source_ip=ip,
@@ -68,7 +69,7 @@ class LogAnalyzer:
             # LOGIKA SIEM (THREAT INTELLIGENCE)
             # =======================================================
             
-            # 1. Sprawdź IP w rejestrze
+            # [ZMODYFIKOWANO] Sprawdzenie IP w rejestrze reputacji
             ip_entry = IPRegistry.query.filter_by(ip_address=ip).first()
             
             if not ip_entry:
@@ -83,25 +84,26 @@ class LogAnalyzer:
                 # 3. Istniejące IP - aktualizuj last_seen
                 ip_entry.last_seen = datetime.now(timezone.utc)
             
-            # 4. Ustal severity i message na podstawie statusu IP
+            # [ZMODYFIKOWANO] Ustalanie severity na podstawie statusu IP
             if ip_entry.status == 'BANNED':
                 severity = 'CRITICAL'
-                message = f"🚨 BANNED IP {ip} próbował się zalogować jako '{user}'"
+                message = f"BANNED IP {ip} próbował się zalogować jako '{user}'"
             elif ip_entry.status == 'TRUSTED':
                 # Pomijamy alerty dla zaufanych IP
                 continue
             else:
                 severity = 'WARNING'
-                message = f"⚠️ Nieudana próba logowania z {ip} (user: {user})"
+                message = f"Nieudana próba logowania z {ip} (user: {user})"
             
-            # 5. Stwórz Alert
+            # [ZMODYFIKOWANO] Tworzenie alertu w bazie
             new_alert = Alert(
                 host_id=host_id,
                 alert_type=row['alert_type'],
                 source_ip=ip,
                 severity=severity,
                 message=message,
-                timestamp=log_timestamp  # Używamy oryginalnego timestampa z logu
+                # [NAPRAWIONO BUG] Używamy oryginalnego timestampa z logu!
+                timestamp=log_timestamp
             )
             
             # 6. Dodaj do sesji i zwiększ licznik

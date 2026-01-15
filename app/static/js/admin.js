@@ -1,4 +1,5 @@
 import { createEl, clearContainer } from './dom.js';
+// [ODKOMENTOWANO] Import funkcji IP Registry
 import { fetchHosts, createHost, updateHost, removeHost, fetchIPs, createIP, updateIP, removeIP } from './api.js';
 
 // --- SEKCJA HOSTÓW ---
@@ -66,6 +67,7 @@ function renderHostRow(host) {
     editBtn.addEventListener('click', () => openHostModal(host));
 
     const delBtn = createEl('button', ['btn', 'btn-outline-danger'], '🗑️', btnGroup);
+    // [ZMODYFIKOWANO] Usunięto confirm() dla szybszego UX
     delBtn.addEventListener('click', async () => {
         await removeHost(host.id);
         await refreshHosts();

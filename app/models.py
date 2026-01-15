@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from flask_login import UserMixin
+# [ZMODYFIKOWANO] Import biblioteki do bezpiecznego hashowania haseł
 from werkzeug.security import generate_password_hash, check_password_hash
 from .extensions import db
 
@@ -10,10 +11,12 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), unique=True, index=True, nullable=False)
     password_hash = db.Column(db.String(256))
 
+    # [ZMODYFIKOWANO] Metoda hashująca hasło - NIGDY nie przechowujemy plain text!
     def set_password(self, password):
         """Hashuje hasło i zapisuje do password_hash."""
         self.password_hash = generate_password_hash(password)
 
+    # [ZMODYFIKOWANO] Weryfikacja hasła - porównuje hash, nie plain text
     def check_password(self, password):
         """Weryfikuje hasło przeciwko zapisanemu hashowi."""
         return check_password_hash(self.password_hash, password) 

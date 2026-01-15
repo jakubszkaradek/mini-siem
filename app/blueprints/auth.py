@@ -13,16 +13,16 @@ def login():
     form = LoginForm()
 
     if form.validate_on_submit():
-        # Pobierz użytkownika z bazy
+        # [ZMODYFIKOWANO] Pobranie użytkownika z bazy po loginie
         user = User.query.filter_by(username=form.username.data).first()
         
-        # Sprawdź czy użytkownik istnieje i hasło jest poprawne
+        # [ZMODYFIKOWANO] Weryfikacja: user istnieje AND hasło poprawne
         if user and user.check_password(form.password.data):
-            login_user(user)
+            login_user(user)  # Flask-Login zapisuje sesję
             flash('Zalogowano pomyślnie!', 'success')
             return redirect(url_for('ui.config'))
         else:
-            # WAŻNE: Ogólny komunikat - nie zdradzamy czy login czy hasło złe
+            # [ZMODYFIKOWANO] BEZPIECZEŃSTWO: ogólny komunikat, nie zdradzamy szczegółów
             flash('Nieprawidłowy login lub hasło.', 'danger')
 
     return render_template('login.html', form=form)
